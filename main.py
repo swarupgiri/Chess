@@ -24,6 +24,7 @@ for i in range(8):
         print((((i + 1) * CELL) + (BORDER * WIDTH), ((j + 1) * CELL) + (BORDER * HEIGHT), CELL, CELL))
         if index: pygame.draw.rect(screen, "#876247", (((i + 1) * CELL) - (BORDER * WIDTH), ((j + 1) * CELL) - (BORDER * HEIGHT), CELL, CELL))
 
+
         #print(i, j)
         #print(index, end="")
     #print("\n")
