@@ -5,7 +5,6 @@ board.push_san("e5")
 print(board)
 import pygame
 
-
 CELL = 78 # DEFAULT => 80 [only works with factors of >80]
 WIDTH = HEIGHT = 9 * CELL
 BORDER = CELL / (1440 * (CELL / 80))
