@@ -23,6 +23,7 @@ for i in range(len(the_board)):
 for i in range(8):
     for j in range(8):
         the_board[i][j] = the_board[i][j].replace(".", "")
+
 print(the_board)
 
 for i in range(8):
