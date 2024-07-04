@@ -1,7 +1,7 @@
 import chess
 board = chess.Board()
-board.push_san("e4")
-board.push_san("e5")
+#board.push_san("e4")
+#board.push_san("e5")
 print(board)
 import pygame
 
@@ -16,12 +16,19 @@ clock = pygame.time.Clock()
 pygame.draw.rect(screen, "#543c2c", (0, 0, WIDTH, HEIGHT))
 pygame.draw.rect(screen, "#b99d78", (BORDER * WIDTH, BORDER * HEIGHT, WIDTH - (2 * BORDER * WIDTH), HEIGHT - (2 * BORDER * HEIGHT)))
 
+the_board = str(board)
+the_board = the_board.split("\n")
+for i in range(len(the_board)):
+    the_board[i] = the_board[i].split(" ")
+for i in range(8):
+    for j in range(8):
+        the_board[i][j] = the_board[i][j].replace(".", "")
+print(the_board)
+
 for i in range(8):
     for j in range(8):
         index = (i % 2) + (j % 2)
         index = index if index < 2 else 0
-        print(i, j)
-        print((((i + 1) * CELL) + (BORDER * WIDTH), ((j + 1) * CELL) + (BORDER * HEIGHT), CELL, CELL))
         if index: pygame.draw.rect(screen, "#876247", (((i + 1) * CELL) - (BORDER * WIDTH), ((j + 1) * CELL) - (BORDER * HEIGHT), CELL, CELL))
 
 
