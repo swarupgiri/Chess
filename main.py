@@ -1,7 +1,12 @@
+import datetime
+import pandas
 import chess
 import math
 import time
 import threading
+import ctypes
+import customtkinter as ctk
+from win32mica import ApplyMica, MicaTheme, MicaStyle
 board = chess.Board()
 board.set_fen("8/8/3k4/8/8/8/5qK1/8 w - - 0 1")
 #board.push_san("e5")
@@ -13,6 +18,7 @@ WIDTH = HEIGHT = 9 * CELL
 BORDER = CELL / (1440 * (CELL / 80))
 FLIPPED = False
 DEFAULT_PROMO = "q"
+OVER = False
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chess")
@@ -70,6 +76,83 @@ if pygame.font.get_init():
     font = pygame.font.Font(None, 36)  # Try initializing with default font
 else:
     font = pygame.font.SysFont("Arial", 36)  # Fallback to system font
+
+def quit_now():
+    print("GAME OVER")
+
+
+
+
+
+start_time = datetime.datetime.now()
+time_left = (start_time + datetime.timedelta(minutes=10)) - start_time  # Example value
+
+
+def round_datetime(dt, rnd=1):
+    # Calculate the number of microseconds that represent a hundredth of a second
+    hundredth_of_second = 10000 if rnd == 2 else 1000000
+
+    # Calculate the remainder of microseconds when divided by a hundredth of a second
+    remainder = dt.microseconds % hundredth_of_second
+
+    # Check if the remainder is greater than or equal to half of a hundredth of a second
+    if remainder >= hundredth_of_second / 2:
+        # Round up to the next hundredth of a second
+        dt = dt + datetime.timedelta(microseconds=(hundredth_of_second - remainder))
+    else:
+        # Round down to the nearest hundredth of a second
+        dt = dt - datetime.timedelta(microseconds=remainder)
+
+    return dt
+def start_customtkinter_window():
+    # Initialize customtkinter
+    ctk.set_appearance_mode("dark")
+    root = ctk.CTk()
+    root.title("Chess Info")
+
+    # Apply Mica effect
+    hwnd = root.winfo_id()
+    ApplyMica(ctypes.windll.user32.GetForegroundWindow(root.winfo_id()), MicaTheme.AUTO, MicaStyle.ALT)
+
+    # Create labels for time left and current turn
+    time_left_label = ctk.CTkLabel(root, text="Time Left: ")
+    time_left_label.pack(pady=10)
+
+    turn_label = ctk.CTkLabel(root, text="Current Turn: ")
+    turn_label.pack(pady=10)
+
+    over_or_not = ctk.CTkLabel(root, text="Current Turn: ")
+    over_or_not.pack(pady=10)
+    def update_labels():
+        # This function will update the labels with the latest info
+        left = round_datetime((start_time + datetime.timedelta(minutes=10)) - datetime.datetime.now()) if not OVER else left
+        time_left_label.configure(text=f"Time Left: {left}")
+
+        turn_label.configure(text=f"Current Turn: {'White' if board.turn else 'Black'}")
+        over_or_not.configure(text=f"Status: {'Stalemate' if board.result() == '1/2-1/2' else 'White Won' if board.result() == '1-0' else 'Black Won' if board.result() == '0-1' else 'Playing'} ")
+        # Schedule the function to be called again after 1 second
+        root.after(1, update_labels)
+
+    # Start updating the labels
+    update_labels()
+
+    # Start the customtkinter event loop
+    root.mainloop()
+
+# Start the customtkinter window in a separate thread
+tk_thread = threading.Thread(target=start_customtkinter_window)
+tk_thread.daemon = True  # This makes sure the thread will exit when the main program exits
+tk_thread.start()
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -217,10 +300,16 @@ while True:
     pygame.draw.rect(screen, "#543c2c", (0, HEIGHT - (BORDER * HEIGHT), WIDTH, HEIGHT * BORDER))
     if board.result() == "1/2-1/2":
         print("Draw")
-    elif board.result == "0-1":
+        threading.Thread(target=quit_now()).start()
+        OVER = True
+    elif board.result() == "0-1":
         print("Black Won")
-    elif board.result == "1-0":
+        threading.Thread(target=quit_now()).start()
+        OVER = True
+    elif board.result() == "1-0":
         print("White Won")
+        threading.Thread(target=quit_now()).start()
+        OVER = True
 
     pygame.display.flip()
     screen.fill((0, 0, 0))
