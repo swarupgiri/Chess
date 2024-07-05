@@ -70,21 +70,7 @@ if pygame.font.get_init():
     font = pygame.font.Font(None, 36)  # Try initializing with default font
 else:
     font = pygame.font.SysFont("Arial", 36)  # Fallback to system font
-def game_over_animation():
-    start_time = pygame.time.get_ticks()
-    current_size = 1
-    target_size = 72  # Adjust as per your preference
-    while current_size < target_size:
-        elapsed_time = pygame.time.get_ticks() - start_time
-        progress = elapsed_time / 2000  # 2000 ms (2 seconds)
-        current_size = int(progress * target_size)
-        text = font.render("GAME OVER", True, (255, 0, 0))  # Red color, adjust as needed
-        text = pygame.transform.scale(text, (current_size, current_size))
-        text_rect = text.get_rect(center=screen.get_rect().center)
 
-        screen.blit(text, text_rect)
-        pygame.display.flip()
-        pygame.time.delay(10)  # Adjust delay for smoother animation
 
 
 while True:
@@ -230,7 +216,6 @@ while True:
     pygame.draw.rect(screen, "#543c2c", (WIDTH - (BORDER * WIDTH), 0, WIDTH * BORDER, HEIGHT))
     pygame.draw.rect(screen, "#543c2c", (0, HEIGHT - (BORDER * HEIGHT), WIDTH, HEIGHT * BORDER))
     if board.result() == "1/2-1/2":
-        threading.Thread(target=game_over_animation).start()
     elif board.result == "0-1":
         print("Black Won")
     elif board.result == "1-0":
