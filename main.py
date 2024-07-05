@@ -216,6 +216,7 @@ while True:
     pygame.draw.rect(screen, "#543c2c", (WIDTH - (BORDER * WIDTH), 0, WIDTH * BORDER, HEIGHT))
     pygame.draw.rect(screen, "#543c2c", (0, HEIGHT - (BORDER * HEIGHT), WIDTH, HEIGHT * BORDER))
     if board.result() == "1/2-1/2":
+        print("Draw")
     elif board.result == "0-1":
         print("Black Won")
     elif board.result == "1-0":
