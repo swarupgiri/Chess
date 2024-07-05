@@ -1,8 +1,9 @@
 import chess
 import math
 import time
+import threading
 board = chess.Board()
-
+board.set_fen("8/8/3k4/8/8/8/5qK1/8 w - - 0 1")
 #board.push_san("e5")
 print(board)
 import pygame
@@ -11,6 +12,7 @@ CELL = 78 # DEFAULT => 80 [only works with factors of >80]
 WIDTH = HEIGHT = 9 * CELL
 BORDER = CELL / (1440 * (CELL / 80))
 FLIPPED = False
+DEFAULT_PROMO = "q"
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chess")
@@ -60,6 +62,31 @@ def get_piece_at(square):
 highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
 highlighted_box_2 = (WIDTH * WIDTH, HEIGHT * HEIGHT)
 curr_pos = highlighted_box
+
+font = pygame.font.Font(None, 36)  # Default font, may not always work
+if not pygame.font.get_init():
+    pygame.font.init()  # Initialize fonts if not already done
+if pygame.font.get_init():
+    font = pygame.font.Font(None, 36)  # Try initializing with default font
+else:
+    font = pygame.font.SysFont("Arial", 36)  # Fallback to system font
+def game_over_animation():
+    start_time = pygame.time.get_ticks()
+    current_size = 1
+    target_size = 72  # Adjust as per your preference
+    while current_size < target_size:
+        elapsed_time = pygame.time.get_ticks() - start_time
+        progress = elapsed_time / 2000  # 2000 ms (2 seconds)
+        current_size = int(progress * target_size)
+        text = font.render("GAME OVER", True, (255, 0, 0))  # Red color, adjust as needed
+        text = pygame.transform.scale(text, (current_size, current_size))
+        text_rect = text.get_rect(center=screen.get_rect().center)
+
+        screen.blit(text, text_rect)
+        pygame.display.flip()
+        pygame.time.delay(10)  # Adjust delay for smoother animation
+
+
 while True:
     for event in pygame.event.get():
 
@@ -95,13 +122,23 @@ while True:
             curr_pos = get_cur_pos(curr_pos[0], curr_pos[1])
             print(curr_pos)
             is_selected[2] = curr_pos
+            print(board.result(), "E")
+            print(board.is_legal(chess.Move.from_uci("e4e5q")))
             try:
                 move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}")
+
                 if board.is_legal(move):
                     board.push(move)
+                else:
+                    move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}{DEFAULT_PROMO.lower()}")
+                    if board.is_legal(move):
+                        board.push(move)
+                    else:
+                        move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}{DEFAULT_PROMO.upper()}")
                 is_selected[1] = is_selected[2] = ""
+                print(board.legal_moves)
             except:
-                print("hi")
+                print("e")
             highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
         #if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         #    highlighted_box_2 = (WIDTH * WIDTH, HEIGHT * HEIGHT)
@@ -192,7 +229,12 @@ while True:
     pygame.draw.rect(screen, "#543c2c", (0, 0, WIDTH * BORDER, HEIGHT))
     pygame.draw.rect(screen, "#543c2c", (WIDTH - (BORDER * WIDTH), 0, WIDTH * BORDER, HEIGHT))
     pygame.draw.rect(screen, "#543c2c", (0, HEIGHT - (BORDER * HEIGHT), WIDTH, HEIGHT * BORDER))
-
+    if board.result() == "1/2-1/2":
+        threading.Thread(target=game_over_animation).start()
+    elif board.result == "0-1":
+        print("Black Won")
+    elif board.result == "1-0":
+        print("White Won")
 
     pygame.display.flip()
     screen.fill((0, 0, 0))
