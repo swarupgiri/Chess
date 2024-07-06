@@ -138,6 +138,9 @@ def round_datetime(dt, rnd=1):
         dt = dt - datetime.timedelta(microseconds=remainder)
 
     return dt
+def check_():
+    global FLIPPED
+    FLIPPED = not FLIPPED
 def start_customtkinter_window():
     # Initialize customtkinter
     ctk.set_appearance_mode("dark")
@@ -157,6 +160,11 @@ def start_customtkinter_window():
 
     over_or_not = ctk.CTkLabel(root, text="Current Turn: ")
     over_or_not.pack(pady=10)
+
+    checkbox = ctk.CTkCheckBox(master=root, text="Flipped", command=check_,
+                                         onvalue="on", offvalue="off")
+    checkbox.pack(padx=20, pady=10)
+
     def update_labels():
         # This function will update the labels with the latest info
         left = round_datetime((start_time + datetime.timedelta(minutes=10)) - datetime.datetime.now()) if not OVER else left
@@ -312,8 +320,10 @@ while True:
 
 
     for i in highlight_moves:
-
-        pygame.draw.ellipse(screen, "#e489f2", ((((i[0]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, (((7 - i[1]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, CELL / 2, CELL / 2))
+        rec = ((((i[0]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, (((7 - i[1]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, CELL / 2, CELL / 2)
+        if FLIPPED:
+            rec = ((((7 - i[0]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, (((7 - i[1]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, CELL / 2, CELL / 2)
+        pygame.draw.ellipse(screen, "#e489f2", rec)
         #print(i)
 
 
