@@ -49,7 +49,12 @@ def get_cur_pos(zero, one):
         ret = (ret[0], 7 - ret[1])
     mapping = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h'}
     return f"{mapping.get(int(ret[0]))}{int(ret[1]) + 1}"
-
+def reset():
+    board.set_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    global start_time
+    start_time = datetime.datetime.now()
+def load_fen_notation(fen):
+    board.set_fen(fen)
 
 def algebraic_to_coords(pos):
     pos = str(board.parse_san(pos))
@@ -164,6 +169,9 @@ def start_customtkinter_window():
     checkbox = ctk.CTkCheckBox(master=root, text="Flipped", command=check_,
                                          onvalue="on", offvalue="off")
     checkbox.pack(padx=20, pady=10)
+
+    button = ctk.CTkButton(root, text="Reset", command=reset)
+    button.pack(pady=10)
 
     def update_labels():
         # This function will update the labels with the latest info
