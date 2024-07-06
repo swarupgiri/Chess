@@ -8,7 +8,7 @@ import ctypes
 import customtkinter as ctk
 from win32mica import ApplyMica, MicaTheme, MicaStyle
 board = chess.Board()
-board.set_fen("8/8/3k4/8/8/8/5qK1/8 w - - 0 1")
+#board.set_fen("8/8/3k4/8/8/8/5qK1/8 w - - 0 1")
 #board.push_san("e5")
 print(board)
 import pygame
@@ -49,6 +49,40 @@ def get_cur_pos(zero, one):
         ret = (ret[0], 7 - ret[1])
     mapping = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h'}
     return f"{mapping.get(int(ret[0]))}{int(ret[1]) + 1}"
+
+
+def algebraic_to_coords(pos):
+    pos = str(board.parse_san(pos))
+    pos = pos[2] + pos[3]
+    print(pos, len(pos))
+    #if len(pos) == 4:
+    #    if "+" in pos:
+    #        pos = pos[1] + pos[2]
+    #    else:
+    #        pos = pos[2] + pos[3]
+    #elif len(pos) == 3:
+    #    if "+" in pos:
+    #        pos = pos[0] + pos[1]
+    #    else:
+    #        pos = pos[1] + pos[2]
+    #elif len(pos) == 5:
+    #    if "+" in pos:
+    #        pos = pos[2] + pos[3]
+    #    else:
+    #        pos = pos[3] + pos[4]
+    mapping = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
+    file_letter = pos[0]
+    rank_number = int(pos[1]) - 1  # Convert rank number to zero-indexed
+
+    file_index = mapping.get(file_letter)
+    if file_index is None or rank_number < 0 or rank_number > 7:
+        raise ValueError("Invalid algebraic notation position")
+
+    if FLIPPED:
+        file_index = 7 - file_index
+        rank_number = 7 - rank_number
+
+    return (file_index, rank_number)
 def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
@@ -147,13 +181,18 @@ tk_thread.start()
 
 
 
+def get_legal_moves(square):
+    piece_moves = []
+    for move in board.legal_moves:
+        if move.from_square == square:
+            piece_moves.append(move)
+    return piece_moves
 
 
 
 
 
-
-
+highlight_moves = []
 
 
 while True:
@@ -175,13 +214,20 @@ while True:
             if get_piece_at(curr_pos) == None:
                 highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
                 break
-            print(board.legal_moves)
-            print()
+            #print(get_piece_at(curr_pos))
+            legal_moves = get_legal_moves(chess.parse_square(curr_pos))
+            #print(legal_moves[1], "E")
+            #print(algebraic_to_coords("a1"))
+            # Print the legal moves
+            for move in legal_moves:
+                #print(board.san(move))
+                m = algebraic_to_coords(board.san(move))
+                highlight_moves.append(m)
+
+                #pygame.draw.rect(screen, "#ffffff", (0, 0, 10000, 10000))
+                #print(board.san(move))
             is_selected[0] = True
             is_selected[1] = curr_pos
-            print("FDSKJ")
-            print(curr_pos)
-            print(CELL/8)
         if event.type == pygame.MOUSEBUTTONUP:
             is_selected[0] = False
             curr_pos = pygame.mouse.get_pos()
@@ -189,10 +235,7 @@ while True:
             curr_pos = ((curr_pos[0] - (curr_pos[0] % CELL)) + (BORDER * WIDTH),
                                (curr_pos[1] - (curr_pos[1] % CELL)) + (BORDER * HEIGHT))
             curr_pos = get_cur_pos(curr_pos[0], curr_pos[1])
-            print(curr_pos)
             is_selected[2] = curr_pos
-            print(board.result(), "E")
-            print(board.is_legal(chess.Move.from_uci("e4e5q")))
             try:
                 move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}")
 
@@ -205,10 +248,10 @@ while True:
                     else:
                         move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}{DEFAULT_PROMO.upper()}")
                 is_selected[1] = is_selected[2] = ""
-                print(board.legal_moves)
             except:
-                print("e")
+                pass
             highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
+            highlight_moves = []
         #if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         #    highlighted_box_2 = (WIDTH * WIDTH, HEIGHT * HEIGHT)
         #    highlighted_box_2 = pygame.mouse.get_pos()
@@ -266,6 +309,14 @@ while True:
     #pygame.draw.rect(screen, "#e489f2", (highlighted_box[0], highlighted_box[1], CELL, CELL))
     #pygame.draw.rect(screen, "#f2a389", (highlighted_box_2[0], highlighted_box_2[1], CELL, CELL))
     pygame.draw.ellipse(screen, "#e489f2", (highlighted_box[0], highlighted_box[1], CELL, CELL))
+
+
+    for i in highlight_moves:
+
+        pygame.draw.ellipse(screen, "#e489f2", ((((i[0]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, (((7 - i[1]) * CELL) + (0.5 * CELL)) + 0.25 * CELL, CELL / 2, CELL / 2))
+        #print(i)
+
+
     for i in _all:
         for j in i:
             for k in j:
@@ -299,15 +350,12 @@ while True:
     pygame.draw.rect(screen, "#543c2c", (WIDTH - (BORDER * WIDTH), 0, WIDTH * BORDER, HEIGHT))
     pygame.draw.rect(screen, "#543c2c", (0, HEIGHT - (BORDER * HEIGHT), WIDTH, HEIGHT * BORDER))
     if board.result() == "1/2-1/2":
-        print("Draw")
         threading.Thread(target=quit_now()).start()
         OVER = True
     elif board.result() == "0-1":
-        print("Black Won")
         threading.Thread(target=quit_now()).start()
         OVER = True
     elif board.result() == "1-0":
-        print("White Won")
         threading.Thread(target=quit_now()).start()
         OVER = True
 
