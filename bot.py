@@ -8,16 +8,76 @@ import numpy as np
 from collections import defaultdict
 import multiprocessing
 
-# Transposition Table
-transposition_table = {}
+import chess
+import random
+import numpy as np
 
 # Piece-square tables for different stages of the game
-PAWN_TABLE_BEGINNING = np.array([...])
-KNIGHT_TABLE_BEGINNING = np.array([...])
-BISHOP_TABLE_BEGINNING = np.array([...])
-ROOK_TABLE_BEGINNING = np.array([...])
-QUEEN_TABLE_BEGINNING = np.array([...])
-KING_TABLE_BEGINNING = np.array([...])
+PAWN_TABLE_BEGINNING = np.array([
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [5, 5, 5, 5, 5, 5, 5, 5],
+    [1, 1, 2, 3, 3, 2, 1, 1],
+    [0.5, 0.5, 1, 2.5, 2.5, 1, 0.5, 0.5],
+    [0, 0, 0, 2, 2, 0, 0, 0],
+    [0.5, -0.5, -1, 0, 0, -1, -0.5, 0.5],
+    [0.5, 1, 1, -2, -2, 1, 1, 0.5],
+    [0, 0, 0, 0, 0, 0, 0, 0]
+])
+
+KNIGHT_TABLE_BEGINNING = np.array([
+    [-5, -4, -3, -3, -3, -3, -4, -5],
+    [-4, -2, 0, 0, 0, 0, -2, -4],
+    [-3, 0, 1, 1.5, 1.5, 1, 0, -3],
+    [-3, 0.5, 1.5, 2, 2, 1.5, 0.5, -3],
+    [-3, 0, 1.5, 2, 2, 1.5, 0, -3],
+    [-3, 0.5, 1, 1.5, 1.5, 1, 0.5, -3],
+    [-4, -2, 0, 0.5, 0.5, 0, -2, -4],
+    [-5, -4, -3, -3, -3, -3, -4, -5]
+])
+
+BISHOP_TABLE_BEGINNING = np.array([
+    [-2, -1, -1, -1, -1, -1, -1, -2],
+    [-1, 0, 0, 0, 0, 0, 0, -1],
+    [-1, 0, 0.5, 1, 1, 0.5, 0, -1],
+    [-1, 0.5, 0.5, 1, 1, 0.5, 0.5, -1],
+    [-1, 0, 1, 1, 1, 1, 0, -1],
+    [-1, 1, 1, 1, 1, 1, 1, -1],
+    [-1, 0.5, 0, 0, 0, 0, 0.5, -1],
+    [-2, -1, -1, -1, -1, -1, -1, -2]
+])
+
+ROOK_TABLE_BEGINNING = np.array([
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0.5, 1, 1, 1, 1, 1, 1, 0.5],
+    [-0.5, 0, 0, 0, 0, 0, 0, -0.5],
+    [-0.5, 0, 0, 0, 0, 0, 0, -0.5],
+    [-0.5, 0, 0, 0, 0, 0, 0, -0.5],
+    [-0.5, 0, 0, 0, 0, 0, 0, -0.5],
+    [-0.5, 0, 0, 0, 0, 0, 0, -0.5],
+    [0, 0, 0, 0.5, 0.5, 0, 0, 0]
+])
+
+QUEEN_TABLE_BEGINNING = np.array([
+    [-2, -1, -1, -0.5, -0.5, -1, -1, -2],
+    [-1, 0, 0, 0, 0, 0, 0, -1],
+    [-1, 0, 0.5, 0.5, 0.5, 0.5, 0, -1],
+    [-0.5, 0, 0.5, 0.5, 0.5, 0.5, 0, -0.5],
+    [0, 0, 0.5, 0.5, 0.5, 0.5, 0, -0.5],
+    [-1, 0.5, 0.5, 0.5, 0.5, 0.5, 0, -1],
+    [-1, 0, 0.5, 0, 0, 0, 0, -1],
+    [-2, -1, -1, -0.5, -0.5, -1, -1, -2]
+])
+
+KING_TABLE_BEGINNING = np.array([
+    [-3, -4, -4, -5, -5, -4, -4, -3],
+    [-3, -4, -4, -5, -5, -4, -4, -3],
+    [-3, -4, -4, -5, -5, -4, -4, -3],
+    [-3, -4, -4, -5, -5, -4, -4, -3],
+    [-2, -3, -3, -4, -4, -3, -3, -2],
+    [-1, -2, -2, -2, -2, -2, -2, -1],
+    [2, 2, 0, 0, 0, 0, 2, 2],
+    [2, 3, 1, 0, 0, 1, 3, 2]
+])
 
 
 # Mirror tables for black pieces
@@ -31,6 +91,31 @@ BISHOP_TABLE_BEGINNING_BLACK = mirror_table(BISHOP_TABLE_BEGINNING)
 ROOK_TABLE_BEGINNING_BLACK = mirror_table(ROOK_TABLE_BEGINNING)
 QUEEN_TABLE_BEGINNING_BLACK = mirror_table(QUEEN_TABLE_BEGINNING)
 KING_TABLE_BEGINNING_BLACK = mirror_table(KING_TABLE_BEGINNING)
+
+
+# Define similar tables for middle and endgame if needed
+
+# Evaluation function incorporating heatmaps
+def evaluate_board(board):
+    if board.is_checkmate():
+        if board.turn:
+            return -9999  # Black wins
+        else:
+            return 9999  # White wins
+    if board.is_stalemate() or board.is_insufficient_material() or board.is_seventyfive_moves() or board.is_fivefold_repetition():
+        return 0  # Draw
+
+    material = 0
+    positional = 0
+
+    for square in chess.SQUARES:
+        piece = board.piece_at(square)
+        if piece:
+            value = get_piece_value(piece)
+            material += value
+            positional += get_positional_value(piece, square)
+
+    return material + positional
 
 
 def get_piece_value(piece):
@@ -67,28 +152,6 @@ def get_positional_value(piece, square):
     return table[chess.square_rank(square)][chess.square_file(square)]
 
 
-def evaluate_board(board):
-    if board.is_checkmate():
-        if board.turn:
-            return -9999  # Black wins
-        else:
-            return 9999  # White wins
-    if board.is_stalemate() or board.is_insufficient_material() or board.is_seventyfive_moves() or board.is_fivefold_repetition():
-        return 0  # Draw
-
-    material = 0
-    positional = 0
-
-    for square in chess.SQUARES:
-        piece = board.piece_at(square)
-        if piece:
-            value = get_piece_value(piece)
-            material += value
-            positional += get_positional_value(piece, square)
-
-    return material + positional
-
-
 def order_moves(board, legal_moves):
     captures = []
     checks = []
@@ -107,88 +170,34 @@ def order_moves(board, legal_moves):
     return captures + checks + others
 
 
-def quiescence_search(board, alpha, beta):
-    stand_pat = evaluate_board(board)
-    if stand_pat >= beta:
-        return beta
-    if alpha < stand_pat:
-        alpha = stand_pat
-
-    legal_moves = list(board.legal_moves)
-
-    for move in legal_moves:
-        if board.is_capture(move) or board.gives_check(move):
-            board.push(move)
-            score = -quiescence_search(board, -beta, -alpha)
-            board.pop()
-
-            if score >= beta:
-                return beta
-            if score > alpha:
-                alpha = score
-
-    return alpha
-
-
-def pvs(board, depth, alpha, beta, maximizing_player):
+def minimax(board, depth, alpha, beta, maximizing_player):
     if depth == 0 or board.is_game_over():
-        return quiescence_search(board, alpha, beta)
+        return evaluate_board(board)
 
     legal_moves = order_moves(board, list(board.legal_moves))
-    first_move = True
 
     if maximizing_player:
+        max_eval = -9999
         for move in legal_moves:
             board.push(move)
-            if first_move:
-                score = -pvs(board, depth - 1, -beta, -alpha, not maximizing_player)
-                first_move = False
-            else:
-                score = -pvs(board, depth - 1, -alpha - 1, -alpha, not maximizing_player)
-                if alpha < score < beta:
-                    score = -pvs(board, depth - 1, -beta, -score, not maximizing_player)
+            eval = minimax(board, depth - 1, alpha, beta, False)
             board.pop()
-            alpha = max(alpha, score)
-            if alpha >= beta:
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
                 break
-        return alpha
+        return max_eval
     else:
+        min_eval = 9999
         for move in legal_moves:
             board.push(move)
-            if first_move:
-                score = -pvs(board, depth - 1, -beta, -alpha, not maximizing_player)
-                first_move = False
-            else:
-                score = -pvs(board, depth - 1, -alpha - 1, -alpha, not maximizing_player)
-                if alpha < score < beta:
-                    score = -pvs(board, depth - 1, -beta, -score, not maximizing_player)
+            eval = minimax(board, depth - 1, alpha, beta, True)
             board.pop()
-            beta = min(beta, score)
-            if alpha >= beta:
+            min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha:
                 break
-        return beta
-
-
-def iterative_deepening(board, max_depth):
-    best_move = None
-    for depth in range(1, max_depth + 1):
-        best_move = find_best_move(board, depth)
-    return best_move
-
-
-def parallel_find_best_move(board, depth):
-    with multiprocessing.Pool() as pool:
-        results = pool.map(parallel_search,
-                           [(board.copy(), move, depth) for move in order_moves(board, list(board.legal_moves))])
-    best_move = max(results, key=lambda x: x[1])[0]
-    return best_move
-
-
-def parallel_search(args):
-    board, move, depth = args
-    board.push(move)
-    score = pvs(board, depth - 1, -10000, 10000, board.turn == chess.WHITE)
-    return (move, score)
+        return min_eval
 
 
 def find_best_move(board, depth):
@@ -201,7 +210,7 @@ def find_best_move(board, depth):
 
     for move in legal_moves:
         board.push(move)
-        board_value = pvs(board, depth - 1, alpha, beta, board.turn == chess.BLACK)
+        board_value = minimax(board, depth - 1, alpha, beta, board.turn == chess.BLACK)
         board.pop()
 
         if board.turn == chess.WHITE:
@@ -218,5 +227,10 @@ def find_best_move(board, depth):
 
 def return_move(fen, depth=3):
     b.set_fen(fen)
-    best_move = parallel_find_best_move(b, depth)
+    best_move = find_best_move(b, depth)
     return b.san(best_move)
+
+
+# Example usage
+fen = b.fen()  # Use the current position for demonstration
+print(return_move(fen, depth=3))
