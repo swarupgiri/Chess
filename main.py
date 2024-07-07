@@ -191,13 +191,51 @@ def start_customtkinter_window():
 
     # Start the customtkinter event loop
     root.mainloop()
+white_left = datetime.timedelta(minutes=10)
+def white():
+    # Initialize customtkinter
+    ctk.set_appearance_mode("dark")
+    root = ctk.CTk()
+    root.title("Chess Info")
+
+    # Apply Mica effect
+    hwnd = root.winfo_id()
+    ApplyMica(ctypes.windll.user32.GetForegroundWindow(root.winfo_id()), MicaTheme.AUTO, MicaStyle.ALT)
+
+    # Create labels for time left and current turn
+    time_left_label = ctk.CTkLabel(root, text="Time Left: ")
+    time_left_label.pack(pady=10)
+
+    def update_labels():
+        # This function will update the labels with the latest info
+        global white_left
+        white_left = white_left - datetime.timedelta(seconds=1)
+        time_left_label.configure(text=f"Time Left: {white_time}")
+
+        # Schedule the function to be called again after 1 second
+        root.after(1000, update_labels)
+
+    # Start updating the labels
+    update_labels()
+
+    # Start the customtkinter event loop
+    root.mainloop()
+
+
+
 
 # Start the customtkinter window in a separate thread
 tk_thread = threading.Thread(target=start_customtkinter_window)
 tk_thread.daemon = True  # This makes sure the thread will exit when the main program exits
 tk_thread.start()
 
+#white_time = threading.Thread(target=white)
+#white_time.daemon = True  # This makes sure the thread will exit when the main program exits
+#white_time.start()
 
+#black_time = threading.Thread(target=black)
+#black_time.daemon = True  # This makes sure the thread will exit when the main program exits
+#black_time.start()
 
 
 def get_legal_moves(square):
@@ -220,73 +258,76 @@ while True:
 
         if event.type == pygame.QUIT:
             pygame.quit()
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
-            highlighted_box = pygame.mouse.get_pos()
-            highlighted_box = (highlighted_box[0] - (CELL/2), highlighted_box[1] - (CELL/2))
-            highlighted_box = ((highlighted_box[0] - (highlighted_box[0] % CELL)) + (BORDER * WIDTH), (highlighted_box[1] - (highlighted_box[1] % CELL)) + (BORDER * HEIGHT))
-            curr_pos = get_cur_pos(highlighted_box[0], highlighted_box[1])
-            #board.push_san("e4")
-            #board.push_san("d5")
-            #board.push(chess.Move.from_uci("e4d5")) # start to end
-            #board.push_san("e4xd5")
-            if get_piece_at(curr_pos) == None:
+        if PLAY_WITH_BOT and BOT_PLAYS_AS == board.turn:
+            pass
+        else:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
-                break
-            #print(get_piece_at(curr_pos))
-            legal_moves = get_legal_moves(chess.parse_square(curr_pos))
-            #print(legal_moves[1], "E")
-            #print(algebraic_to_coords("a1"))
-            # Print the legal moves
-            for move in legal_moves:
-                #print(board.san(move))
-                m = algebraic_to_coords(board.san(move))
-                highlight_moves.append(m)
+                highlighted_box = pygame.mouse.get_pos()
+                highlighted_box = (highlighted_box[0] - (CELL/2), highlighted_box[1] - (CELL/2))
+                highlighted_box = ((highlighted_box[0] - (highlighted_box[0] % CELL)) + (BORDER * WIDTH), (highlighted_box[1] - (highlighted_box[1] % CELL)) + (BORDER * HEIGHT))
+                curr_pos = get_cur_pos(highlighted_box[0], highlighted_box[1])
+                #board.push_san("e4")
+                #board.push_san("d5")
+                #board.push(chess.Move.from_uci("e4d5")) # start to end
+                #board.push_san("e4xd5")
+                if get_piece_at(curr_pos) == None:
+                    highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
+                    break
+                #print(get_piece_at(curr_pos))
+                legal_moves = get_legal_moves(chess.parse_square(curr_pos))
+                #print(legal_moves[1], "E")
+                #print(algebraic_to_coords("a1"))
+                # Print the legal moves
+                for move in legal_moves:
+                    #print(board.san(move))
+                    m = algebraic_to_coords(board.san(move))
+                    highlight_moves.append(m)
 
-                #pygame.draw.rect(screen, "#ffffff", (0, 0, 10000, 10000))
-                #print(board.san(move))
-            is_selected[0] = True
-            is_selected[1] = curr_pos
-        if event.type == pygame.MOUSEBUTTONUP:
-            is_selected[0] = False
-            curr_pos = pygame.mouse.get_pos()
-            curr_pos = (curr_pos[0] - (CELL / 2), curr_pos[1] - (CELL / 2))
-            curr_pos = ((curr_pos[0] - (curr_pos[0] % CELL)) + (BORDER * WIDTH),
-                               (curr_pos[1] - (curr_pos[1] % CELL)) + (BORDER * HEIGHT))
-            curr_pos = get_cur_pos(curr_pos[0], curr_pos[1])
-            is_selected[2] = curr_pos
-            try:
-                move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}")
+                    #pygame.draw.rect(screen, "#ffffff", (0, 0, 10000, 10000))
+                    #print(board.san(move))
+                is_selected[0] = True
+                is_selected[1] = curr_pos
+            if event.type == pygame.MOUSEBUTTONUP:
+                is_selected[0] = False
+                curr_pos = pygame.mouse.get_pos()
+                curr_pos = (curr_pos[0] - (CELL / 2), curr_pos[1] - (CELL / 2))
+                curr_pos = ((curr_pos[0] - (curr_pos[0] % CELL)) + (BORDER * WIDTH),
+                                   (curr_pos[1] - (curr_pos[1] % CELL)) + (BORDER * HEIGHT))
+                curr_pos = get_cur_pos(curr_pos[0], curr_pos[1])
+                is_selected[2] = curr_pos
+                try:
+                    move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}")
 
-                if board.is_legal(move):
-                    board.push(move)
-                else:
-                    move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}{DEFAULT_PROMO.lower()}")
                     if board.is_legal(move):
                         board.push(move)
                     else:
-                        move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}{DEFAULT_PROMO.upper()}")
-                is_selected[1] = is_selected[2] = ""
-            except:
-                pass
-            highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
-            highlight_moves = []
-        #if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-        #    highlighted_box_2 = (WIDTH * WIDTH, HEIGHT * HEIGHT)
-        #    highlighted_box_2 = pygame.mouse.get_pos()
-        #    highlighted_box_2 = (highlighted_box_2[0] - (CELL/2), highlighted_box_2[1] - (CELL/2))
-        #    highlighted_box_2 = ((highlighted_box_2[0] - (highlighted_box_2[0] % CELL)) + (BORDER * WIDTH), (highlighted_box_2[1] - (highlighted_box_2[1] % CELL)) + (BORDER * HEIGHT))
-        #    curr_pos = get_cur_pos(highlighted_box_2[0], highlighted_box_2[1])
-        #    #board.push_san("e4")
-        #    #board.push_san("d5")
-        #    #board.push(chess.Move.from_uci("e4d5")) # start to end
-        #    #board.push_san("e4xd5")
-        #    print(board.legal_moves)
-        #
-        #    print(curr_pos)
-        #    print(CELL/8)
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-            highlighted_box = highlighted_box_2 = (WIDTH * WIDTH, HEIGHT * HEIGHT)
+                        move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}{DEFAULT_PROMO.lower()}")
+                        if board.is_legal(move):
+                            board.push(move)
+                        else:
+                            move = chess.Move.from_uci(f"{is_selected[1]}{is_selected[2]}{DEFAULT_PROMO.upper()}")
+                    is_selected[1] = is_selected[2] = ""
+                except:
+                    pass
+                highlighted_box = (WIDTH * WIDTH, HEIGHT * HEIGHT)
+                highlight_moves = []
+            #if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            #    highlighted_box_2 = (WIDTH * WIDTH, HEIGHT * HEIGHT)
+            #    highlighted_box_2 = pygame.mouse.get_pos()
+            #    highlighted_box_2 = (highlighted_box_2[0] - (CELL/2), highlighted_box_2[1] - (CELL/2))
+            #    highlighted_box_2 = ((highlighted_box_2[0] - (highlighted_box_2[0] % CELL)) + (BORDER * WIDTH), (highlighted_box_2[1] - (highlighted_box_2[1] % CELL)) + (BORDER * HEIGHT))
+            #    curr_pos = get_cur_pos(highlighted_box_2[0], highlighted_box_2[1])
+            #    #board.push_san("e4")
+            #    #board.push_san("d5")
+            #    #board.push(chess.Move.from_uci("e4d5")) # start to end
+            #    #board.push_san("e4xd5")
+            #    print(board.legal_moves)
+            #
+            #    print(curr_pos)
+            #    print(CELL/8)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                highlighted_box = highlighted_box_2 = (WIDTH * WIDTH, HEIGHT * HEIGHT)
 
     #pygame.draw.rect(screen, "#543c2c", (0, 0, WIDTH, HEIGHT))
     c = ["#b99d78", "#876247"]
@@ -381,7 +422,7 @@ while True:
         OVER = True
 
     if (BOT_PLAYS_AS == board.turn):
-        tk_thread = threading.Thread(target=board.push_san(bot.return_move(board.fen())))
+        tk_thread = threading.Thread(target=lambda: board.push_san(bot.return_move(board.fen())))
         tk_thread.daemon = True  # This makes sure the thread will exit when the main program exits
         tk_thread.start()
 
