@@ -7,6 +7,7 @@ import threading
 import ctypes
 import customtkinter as ctk
 from win32mica import ApplyMica, MicaTheme, MicaStyle
+import bot
 board = chess.Board()
 #board.set_fen("8/8/3k4/8/8/8/5qK1/8 w - - 0 1")
 #board.push_san("e5")
@@ -19,6 +20,8 @@ BORDER = CELL / (1440 * (CELL / 80))
 FLIPPED = False
 DEFAULT_PROMO = "q"
 OVER = False
+PLAY_WITH_BOT = True
+BOT_PLAYS_AS = 0 # w=1, b=0
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chess")
@@ -376,6 +379,12 @@ while True:
     elif board.result() == "1-0":
         threading.Thread(target=quit_now()).start()
         OVER = True
+
+    if (BOT_PLAYS_AS == board.turn):
+        tk_thread = threading.Thread(target=board.push_san(bot.return_move(board.fen())))
+        tk_thread.daemon = True  # This makes sure the thread will exit when the main program exits
+        tk_thread.start()
+
 
     pygame.display.flip()
     screen.fill((0, 0, 0))
