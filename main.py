@@ -149,6 +149,11 @@ def round_datetime(dt, rnd=1):
 def check_():
     global FLIPPED
     FLIPPED = not FLIPPED
+
+def undo():
+    board.pop()
+    if PLAY_WITH_BOT:
+        board.pop()
 def start_customtkinter_window():
     # Initialize customtkinter
     ctk.set_appearance_mode("dark")
@@ -175,6 +180,10 @@ def start_customtkinter_window():
 
     button = ctk.CTkButton(root, text="Reset", command=reset)
     button.pack(pady=10)
+
+    back = ctk.CTkButton(root, text="Undo", command=undo)
+    back.pack(pady=10)
+
 
     def update_labels():
         # This function will update the labels with the latest info
